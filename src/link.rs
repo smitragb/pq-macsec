@@ -1,21 +1,21 @@
 #![allow(dead_code)]
 
-use crate::{packet::EthernetFrame, simulator::SimTime};
-pub type NodeId = u8;
+use crate::{nodes::Node, packet::EthernetFrame, simulator::SimTime};
 
+#[derive(Debug, Clone, Copy)]
 pub struct LinkConfig {
-    pub from: NodeId,
-    pub to: NodeId,
+    pub end_a: Node,
+    pub end_b: Node,
     pub delay: Option<u32>,
     pub corrupt_every: Option<u32>,
     pub drop_every: Option<u32>,
 }
 
 impl LinkConfig {
-    pub fn new(from: NodeId, to: NodeId) -> Self {
+    pub fn new(end_a: Node, end_b: Node) -> Self {
         Self {
-            from,
-            to,
+            end_a,
+            end_b,
             delay: None,
             corrupt_every: None,
             drop_every: None,
@@ -38,8 +38,9 @@ impl LinkConfig {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct Link {
-    config: LinkConfig,
+    pub config: LinkConfig,
     packet_count: u32,
 }
 
