@@ -1,18 +1,20 @@
 #![allow(dead_code)]
 use serde::{Deserialize, Serialize};
 
+pub type MacAddress = [u8; 6];
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EthernetFrame {
-    pub src_mac: [u8; 16],
-    pub dst_mac: [u8; 16],
+    pub src_mac: MacAddress,
+    pub dst_mac: MacAddress,
     pub ethertype: u16,
     pub payload: Vec<u8>,
 }
 
 impl EthernetFrame {
     pub fn new(
-        src_mac: [u8; 16], 
-        dst_mac: [u8; 16], 
+        src_mac: MacAddress, 
+        dst_mac: MacAddress, 
         ethertype: u16, 
         payload: Vec<u8>
     ) -> Self {

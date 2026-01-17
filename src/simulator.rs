@@ -1,12 +1,13 @@
 #![allow(dead_code)]
 use crate::{
     link::{Link, LinkConfig},
-    nodes::{Node, NodeId},
-    packet::EthernetFrame,
+    nodes::{Node, NodeAction, NodeId},
+    packet::{EthernetFrame, MacAddress},
 };
 use std::collections::{BTreeMap, HashMap};
 pub type SimTime = u64;
 
+#[derive(Debug)]
 pub enum Event {
     SendPkt { from: Node, frame: EthernetFrame },
     RcvPkt { at: Node, frame: EthernetFrame },
@@ -40,11 +41,11 @@ impl Simulator {
 
     pub fn with_links(mut self, links: Vec<Link>) -> Self {
         for link in links {
-            let a = link.config.end_a;
-            let b = link.config.end_b;
-            let rev_link = Link::new(LinkConfig::new(b, a));
-            self.links.insert(a.id, link);
-            self.links.insert(b.id, rev_link);
+            let a = link.config.end_a.id;
+            let b = link.config.end_b.id;
+            let rev_link = link.swap_ends();
+            self.links.insert(a, link);
+            self.links.insert(b, rev_link);
         }
         self
     }
@@ -56,7 +57,15 @@ impl Simulator {
         self.links.insert(b.id, rev_link);
     }
 
-    pub fn schedule(&mut self, time: SimTime, event: Event) {
+    pub fn schedule_send(&mut self, time: SimTime, n: Node, dst: MacAddress, payload: Vec<u8>) {
+        if let Some(action) = n.send_pkt(dst, payload) {
+            if let NodeAction::Send { from, frame } = action {
+                self.schedule(time, Event::SendPkt { from, frame });
+            }
+        }
+    }
+
+    fn schedule(&mut self, time: SimTime, event: Event) {
         self.event_queue
             .entry(time)
             .or_insert_with(Vec::new)

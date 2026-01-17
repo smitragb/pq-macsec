@@ -36,6 +36,14 @@ impl LinkConfig {
         self.drop_every = Some(drop_every);
         self
     }
+    
+    pub fn swap_ends(&self) -> Self {
+        Self {
+            end_a: self.end_b,
+            end_b: self.end_a,
+            ..*self
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -50,6 +58,13 @@ impl Link {
             config,
             packet_count: 0,
         }
+    }
+
+    pub fn swap_ends(&self) -> Self {
+        Self {
+            config: self.config.swap_ends(),
+            ..*self
+        }    
     }
 
     pub fn handle_pkt(
