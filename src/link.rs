@@ -1,21 +1,22 @@
 #![allow(dead_code)]
 
-use crate::{nodes::Node, packet::EthernetFrame, simulator::SimTime};
+use crate::{nodes::{Node, NodeId}, packet::EthernetFrame, simulator::SimTime};
+pub type PortId = u8;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct LinkConfig {
-    pub end_a: Node,
-    pub end_b: Node,
+    pub end_a: NodeId,
+    pub end_b: NodeId,
     pub delay: Option<u32>,
     pub corrupt_every: Option<u32>,
     pub drop_every: Option<u32>,
 }
 
 impl LinkConfig {
-    pub fn new(end_a: Node, end_b: Node) -> Self {
+    pub fn new(end_a: &Node, end_b: &Node) -> Self {
         Self {
-            end_a,
-            end_b,
+            end_a: end_a.id,
+            end_b: end_b.id,
             delay: None,
             corrupt_every: None,
             drop_every: None,
@@ -46,7 +47,7 @@ impl LinkConfig {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Link {
     pub config: LinkConfig,
     packet_count: u32,
@@ -67,11 +68,11 @@ impl Link {
         }    
     }
 
-    pub fn handle_pkt(
+    pub fn handle_pkt (
         &mut self,
         pkt: EthernetFrame,
         current_time: SimTime,
-    ) -> Option<(EthernetFrame, SimTime)> {
+    ) -> (Option<EthernetFrame>, SimTime) {
         self.packet_count = self.packet_count.wrapping_add(1);
 
         if let Some(corrupt_every) = self.config.corrupt_every {
@@ -91,6 +92,6 @@ impl Link {
         } else {
             current_time
         };
-        Some((pkt, delivery_time))
+        (Some(pkt), delivery_time)
     }
 }

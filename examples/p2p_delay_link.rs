@@ -1,6 +1,7 @@
-use pq_macsec::{link::{Link, LinkConfig}, nodes::Node, simulator::Simulator};
+use pq_macsec::{init_logging, link::{Link, LinkConfig}, nodes::Node, simulator::Simulator};
 
 fn main() {
+    init_logging();
     let n0 = {
         let mac = [0x00, 0x1a, 0x2b, 0x3c, 0x4d, 0x5e];
         Node::new(0, mac)
@@ -11,15 +12,15 @@ fn main() {
         Node::new(1, mac)
     };
 
-    let nodes = vec![n0, n1];
     let link = {
-        let config = LinkConfig::new(n0, n1).with_delay(2);
+        let config = LinkConfig::new(&n0, &n1).with_delay(2);
         Link::new(config)
     };
+    let nodes = vec![n0.clone(), n1.clone()];
     let links = vec![link];
 
     let mut sim = Simulator::new().with_nodes(nodes).with_links(links);
-    sim.schedule_send(1, n0, n1.mac, b"Hello n1".to_vec());
-    sim.schedule_send(2, n1, n0.mac, b"Hello n0".to_vec());
+    sim.schedule_send(1, &n0, &n1.mac, b"Hello n1".to_vec());
+    sim.schedule_send(2, &n1, &n0.mac, b"Hello n0".to_vec());
     sim.run();
 }

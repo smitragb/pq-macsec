@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use crate::{
     link::{Link, LinkConfig},
     nodes::{Node, NodeAction, NodeId},
@@ -9,8 +8,25 @@ pub type SimTime = u64;
 
 #[derive(Debug)]
 pub enum Event {
-    SendPkt { from: Node, frame: EthernetFrame },
-    RcvPkt { at: Node, frame: EthernetFrame },
+    SendPkt { from: NodeId, frame: EthernetFrame },
+    RcvPkt { at: NodeId, frame: EthernetFrame },
+}
+
+macro_rules! log_frame {
+    ($action:expr, $time:expr, $frame:expr) => {
+        tracing::info!(
+            time = $time,
+            src_mac = format!("{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+                        $frame.src_mac[0], $frame.src_mac[1], $frame.src_mac[2],
+                        $frame.src_mac[3], $frame.src_mac[4], $frame.src_mac[5]),
+            dst_mac = format!("{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+                        $frame.dst_mac[0], $frame.dst_mac[1], $frame.dst_mac[2],
+                        $frame.dst_mac[3], $frame.dst_mac[4], $frame.dst_mac[5]),
+            ethertype = format!("0x{:04x}", $frame.ethertype),
+            payload = String::from_utf8_lossy(&$frame.payload).as_ref(),
+            $action
+        );
+    };
 }
 
 pub struct Simulator {
@@ -35,14 +51,14 @@ impl Simulator {
         self
     }
 
-    pub fn add_node(&mut self, node: Node) {
-        self.nodes.insert(node.id, node);
+    pub fn add_node(&mut self, node: &Node) {
+        self.nodes.insert(node.id, node.clone());
     }
 
     pub fn with_links(mut self, links: Vec<Link>) -> Self {
         for link in links {
-            let a = link.config.end_a.id;
-            let b = link.config.end_b.id;
+            let a = link.config.end_a;
+            let b = link.config.end_b;
             let rev_link = link.swap_ends();
             self.links.insert(a, link);
             self.links.insert(b, rev_link);
@@ -50,14 +66,14 @@ impl Simulator {
         self
     }
 
-    pub fn connect(&mut self, a: Node, b: Node) {
+    pub fn connect(&mut self, a: &Node, b: &Node) {
         let link = Link::new(LinkConfig::new(a, b));
         let rev_link = Link::new(LinkConfig::new(b, a));
         self.links.insert(a.id, link);
         self.links.insert(b.id, rev_link);
     }
 
-    pub fn schedule_send(&mut self, time: SimTime, n: Node, dst: MacAddress, payload: Vec<u8>) {
+    pub fn schedule_send(&mut self, time: SimTime, n: &Node, dst: &MacAddress, payload: Vec<u8>) {
         if let Some(action) = n.send_pkt(dst, payload) {
             if let NodeAction::Send { from, frame } = action {
                 self.schedule(time, Event::SendPkt { from, frame });
@@ -76,23 +92,22 @@ impl Simulator {
         for event in events {
             match event {
                 Event::SendPkt { from, frame } => {
-                    if let Some(peer) = self.links.get(&from.id) {
-                        let deliver_time = if let Some(delay) = peer.config.delay {
-                            time + delay as u64
-                        } else {
-                            time
-                        };
-                        self.schedule(
-                            deliver_time,
-                            Event::RcvPkt {
-                                at: peer.config.end_b,
-                                frame: frame.clone(),
-                            },
-                        );
+                    log_frame!("SEND", time, frame);
+                    if let Some(peer) = self.links.get_mut(&from) {
+                        let peer_id = peer.config.end_b;
+                        if let (Some(pkt), del_time) = peer.handle_pkt(frame.clone(), time) {
+                            self.schedule(
+                                del_time,
+                                Event::RcvPkt { at: peer_id, frame: pkt }
+                            );
+                        }
                     }
                 }
                 Event::RcvPkt { at, frame } => {
-                    let _ = at.rcv_pkt(frame);
+                    if let Some(at_node) = self.nodes.get(at) {
+                        log_frame!("RECV", time, frame);
+                        at_node.rcv_pkt(frame);
+                    } 
                 }
             }
         }

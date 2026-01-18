@@ -1,39 +1,41 @@
 #![allow(dead_code)]
-use crate::packet::{EthernetFrame, MacAddress};
+use std::collections::HashMap;
+
+use crate::{link::PortId, packet::{EthernetFrame, MacAddress}};
 pub type NodeId = u8;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Node {
     pub id: NodeId,
     pub mac: MacAddress,
+    mac_table: HashMap<PortId, MacAddress>
 }
 
 pub enum NodeAction {
-    Send { from: Node, frame: EthernetFrame },
-    Rcv { to: Node, frame: EthernetFrame },
+    Send { from: NodeId, frame: EthernetFrame },
+    Rcv { to: NodeId, frame: EthernetFrame },
 }
 
 impl Node {
     pub fn new(id: NodeId, mac: MacAddress) -> Self {
-        Self { id, mac }
+        Self { 
+            id,
+            mac,
+            mac_table: HashMap::new()
+        }
     }
 
-    pub fn send_pkt(&self, dst_mac: MacAddress, payload: Vec<u8>) -> Option<NodeAction> {
-        let frame = EthernetFrame::new(self.mac, dst_mac, 0x0800, payload);
-        let from = self.clone();
+    pub fn send_pkt(&self, dst_mac: &MacAddress, payload: Vec<u8>) -> Option<NodeAction> {
+        let frame = EthernetFrame::new(self.mac, dst_mac.clone(), 0x0800, payload);
+        let from = self.id;
         Some(NodeAction::Send { from, frame })
     }
 
-    pub fn rcv_pkt(&self, pkt: &EthernetFrame) -> Option<NodeAction> {
-        let src = hex::encode(pkt.src_mac);
-        let dst = hex::encode(pkt.dst_mac);
-        println!(
-            "EthernetFrame received: src: 0x{}, dst: 0x{}, ethertype: {:#x}, payload: {:#?}",
-            src,
-            dst,
-            pkt.ethertype,
-            String::from_utf8(pkt.payload.clone()).unwrap()
-        );
+    pub fn rcv_pkt(&self, _pkt: &EthernetFrame) -> Option<NodeAction> {
         None
+    }
+
+    pub fn install_static_mac_address(&mut self, mac: MacAddress, port: PortId) {
+        self.mac_table.insert(port, mac);
     }
 }
