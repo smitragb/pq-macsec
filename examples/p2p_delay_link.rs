@@ -12,15 +12,17 @@ fn main() {
         Node::new(1, mac)
     };
 
+    let n0_port = 10;
+    let n1_port = 11;
     let link = {
-        let config = LinkConfig::new(&n0, &n1).with_delay(2);
+        let config = LinkConfig::new(n0.id, n0_port, n1.id, n1_port).with_delay(2);
         Link::new(config)
     };
     let nodes = vec![n0.clone(), n1.clone()];
     let links = vec![link];
 
     let mut sim = Simulator::new().with_nodes(nodes).with_links(links);
-    sim.schedule_send(1, &n0, &n1.mac, b"Hello n1".to_vec());
-    sim.schedule_send(2, &n1, &n0.mac, b"Hello n0".to_vec());
+    sim.schedule_send(1, &n0, n0_port, &n1.mac, b"Hello n1".to_vec());
+    sim.schedule_send(2, &n1, n1_port, &n0.mac, b"Hello n0".to_vec());
     sim.run();
 }

@@ -1,22 +1,26 @@
 #![allow(dead_code)]
 
-use crate::{nodes::{Node, NodeId}, packet::EthernetFrame, simulator::SimTime};
+use crate::{nodes::NodeId, packet::EthernetFrame, simulator::SimTime};
 pub type PortId = u8;
 
 #[derive(Debug, Clone)]
 pub struct LinkConfig {
     pub end_a: NodeId,
+    pub port_a: PortId,
     pub end_b: NodeId,
+    pub port_b: PortId,
     pub delay: Option<u32>,
     pub corrupt_every: Option<u32>,
     pub drop_every: Option<u32>,
 }
 
 impl LinkConfig {
-    pub fn new(end_a: &Node, end_b: &Node) -> Self {
+    pub fn new(end_a: NodeId, port_a: PortId, end_b: NodeId, port_b: PortId) -> Self {
         Self {
-            end_a: end_a.id,
-            end_b: end_b.id,
+            end_a,
+            port_a,
+            end_b,
+            port_b,
             delay: None,
             corrupt_every: None,
             drop_every: None,
@@ -41,7 +45,9 @@ impl LinkConfig {
     pub fn swap_ends(&self) -> Self {
         Self {
             end_a: self.end_b,
+            port_a: self.port_b,
             end_b: self.end_a,
+            port_b: self.port_a,
             ..*self
         }
     }

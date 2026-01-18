@@ -12,15 +12,17 @@ fn main() {
         Node::new(1, mac)
     };
 
+    let n0_port = 10;
+    let n1_port = 11;
     let mut sim = Simulator::new();
     sim.add_node(&n0);
     sim.add_node(&n1);
 
     // Connects over instantaneous links
-    sim.connect(&n0, &n1);
+    sim.connect(n0.id, n0_port, n1.id, n1_port);
 
-    sim.schedule_send(1, &n0, &n1.mac, b"Hello n1".to_vec());
-    sim.schedule_send(2, &n1, &n0.mac, b"Hello n0".to_vec());
+    sim.schedule_send(1, &n0, n0_port, &n1.mac, b"Hello n1".to_vec());
+    sim.schedule_send(2, &n1, n1_port, &n0.mac, b"Hello n0".to_vec());
 
     sim.run();
 }
