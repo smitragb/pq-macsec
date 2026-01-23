@@ -1,8 +1,8 @@
 use pq_macsec::{
     init_logging,
     link::{Link, LinkConfig},
-    nodes::SimpleNode,
-    simulator::{Simulator, topology::P2PConnection},
+    nodes::simple::SimpleNode,
+    simulator::{Simulator, topology::p2p::P2PConnection},
 };
 
 fn main() {

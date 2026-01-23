@@ -1,53 +1,53 @@
-#![allow(dead_code)]
-
 use crate::{
-    link::PortId,
-    packet::{EthernetFrame, MacAddress},
+    link::{LinkEndId, PortId}, nodes::{bridging::ForwardingNode, simple::SimpleNode}, packet::{EthernetFrame, MacAddress}
 };
-pub type NodeId = u8;
+pub mod bridging;
+pub mod simple;
 
+pub type NodeId = u8;
 pub trait NodeHandler {
     fn send_pkt(&self, dst_mac: &MacAddress, out_port: PortId) -> Option<NodeAction>;
     fn rcv_pkt(&self, frame: &EthernetFrame, port: PortId) -> Option<NodeAction>;
 }
 
-#[derive(Debug, Clone)]
-pub struct SimpleNode {
-    pub id: NodeId,
-    pub mac: MacAddress,
-    pub port: PortId,
-}
-
-impl SimpleNode {
-    pub fn new(id: NodeId, mac: MacAddress, port: PortId) -> Self {
-        Self { id, mac, port }
-    }
-}
-
-impl NodeHandler for SimpleNode {
-    fn send_pkt(&self, dst_mac: &MacAddress, out_port: PortId) -> Option<NodeAction> {
-        let frame = EthernetFrame::new(self.mac, dst_mac.clone(), 0x800, b"Hello".to_vec());
-        Some(NodeAction::Send {
-            from: self.id,
-            port: out_port,
-            frame,
-        })
-    }
-
-    fn rcv_pkt(&self, _frame: &EthernetFrame, _port: PortId) -> Option<NodeAction> {
-        None
-    }
-}
-
 pub enum NodeAction {
     Send {
-        from: NodeId,
-        port: PortId,
+        from: LinkEndId,
         frame: EthernetFrame,
     },
     Rcv {
-        to: NodeId,
-        port: PortId,
+        to: LinkEndId,
         frame: EthernetFrame,
     },
+}
+
+pub enum Node {
+    Simple(SimpleNode),
+    Forwarding(ForwardingNode),
+}
+
+impl NodeHandler for Node {
+    fn send_pkt(&self, dst_mac: &MacAddress, out_port: PortId) -> Option<NodeAction> {
+        match self {
+            Node::Simple(s) => s.send_pkt(dst_mac, out_port),
+            Node::Forwarding(f) => f.send_pkt(dst_mac, out_port),
+        }
+    }
+
+    fn rcv_pkt(&self, frame: &EthernetFrame, port: PortId) -> Option<NodeAction> {
+        match self {
+            Node::Simple(s) => s.rcv_pkt(frame, port),
+            Node::Forwarding(f) => f.rcv_pkt(frame, port),
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! assert_or_log {
+    ($cond:expr, $($arg:tt)*) => {
+        if !$cond {
+            tracing::error!($($arg)*);
+            panic!("Assertion failed: {}", stringify!($cond));
+        }
+    };
 }

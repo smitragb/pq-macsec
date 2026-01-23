@@ -5,22 +5,22 @@ pub type PortId = u8;
 
 #[derive(Debug, Clone)]
 pub struct LinkConfig {
-    pub end_a: NodeId,
-    pub port_a: PortId,
-    pub end_b: NodeId,
-    pub port_b: PortId,
+    pub end_a: LinkEndId,
+    pub end_b: LinkEndId,
     pub delay: Option<u32>,
     pub corrupt_every: Option<u32>,
     pub drop_every: Option<u32>,
 }
 
+pub type LinkEndId = (NodeId, PortId);
+
 impl LinkConfig {
-    pub fn new(end_a: NodeId, port_a: PortId, end_b: NodeId, port_b: PortId) -> Self {
+    pub fn new(a_id: NodeId, a_port: PortId, b_id: NodeId, b_port: PortId) -> Self {
+        let end_a = (a_id, a_port);
+        let end_b = (b_id, b_port);
         Self {
             end_a,
-            port_a,
             end_b,
-            port_b,
             delay: None,
             corrupt_every: None,
             drop_every: None,
@@ -45,9 +45,7 @@ impl LinkConfig {
     pub fn swap_ends(&self) -> Self {
         Self {
             end_a: self.end_b,
-            port_a: self.port_b,
             end_b: self.end_a,
-            port_b: self.port_a,
             ..*self
         }
     }
@@ -72,6 +70,14 @@ impl Link {
             config: self.config.swap_ends(),
             ..*self
         }    
+    }
+
+    pub fn get_peer(&self, end: LinkEndId) -> LinkEndId {
+        if self.config.end_a == end {
+            self.config.end_b
+        } else {
+            self.config.end_a
+        }
     }
 
     pub fn handle_pkt (

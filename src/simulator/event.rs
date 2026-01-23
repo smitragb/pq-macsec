@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    link::PortId,
-    nodes::{NodeAction, NodeHandler, NodeId},
+    link::{LinkEndId, PortId},
+    nodes::{NodeAction, NodeHandler},
     packet::{EthernetFrame, MacAddress},
     simulator::SimTime,
 };
@@ -11,14 +11,12 @@ use crate::{
 pub enum Event {
     SendPkt {
         time: SimTime,
-        from: NodeId,
-        port: PortId,
+        from: LinkEndId,
         frame: EthernetFrame,
     },
     RcvPkt {
         time: SimTime,
-        at: NodeId,
-        port: PortId,
+        at: LinkEndId,
         frame: EthernetFrame,
     },
 }
@@ -61,11 +59,10 @@ impl EventHandler {
         dst: &MacAddress,
     ) {
         if let Some(action) = n.send_pkt(dst, port) {
-            if let NodeAction::Send { from, port, frame } = action {
+            if let NodeAction::Send { from, frame } = action {
                 self.schedule(Event::SendPkt {
                     time,
                     from,
-                    port,
                     frame,
                 });
             }
