@@ -1,5 +1,7 @@
 use crate::{
-    link::{LinkEndId, PortId}, nodes::{bridging::ForwardingNode, simple::SimpleNode}, packet::{EthernetFrame, MacAddress}
+    link::{LinkEndId, PortId},
+    nodes::{bridging::ForwardingNode, simple::SimpleNode},
+    packet::{EthernetFrame, MacAddress},
 };
 pub mod bridging;
 pub mod simple;

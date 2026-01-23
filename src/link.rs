@@ -1,9 +1,7 @@
-#![allow(dead_code)]
-
 use crate::{nodes::NodeId, packet::EthernetFrame, simulator::SimTime};
 pub type PortId = u8;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct LinkConfig {
     pub end_a: LinkEndId,
     pub end_b: LinkEndId,
@@ -51,7 +49,7 @@ impl LinkConfig {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Link {
     pub config: LinkConfig,
     packet_count: u32,

@@ -6,7 +6,7 @@ use crate::{
     packet::{EthernetFrame, MacAddress},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SimpleNode {
     pub id: NodeId,
     pub mac: MacAddress,

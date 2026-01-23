@@ -10,7 +10,6 @@ use crate::{
     simulator::macros::format_mac,
 };
 
-#[derive(Debug)]
 pub struct ForwardingNode {
     pub id: NodeId,
     pub ports: [PortId; 2], 

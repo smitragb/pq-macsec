@@ -1,9 +1,6 @@
-#![allow(dead_code)]
-use serde::{Deserialize, Serialize};
-
 pub type MacAddress = [u8; 6];
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct EthernetFrame {
     pub src_mac: MacAddress,
     pub dst_mac: MacAddress,
