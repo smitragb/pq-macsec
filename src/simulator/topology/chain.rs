@@ -51,11 +51,11 @@ impl ChainTopology {
                 let node = SimpleNode::new(i as u8, *mac, ports[0]);
                 self.nodes.insert(i as u8, Node::Simple(node));
             } else if i == last {
-                let node = SimpleNode::new(i as u8, *mac, ports[2*last - 1]);
+                let node = SimpleNode::new(i as u8, *mac, ports[2 * last - 1]);
                 self.nodes.insert(i as u8, Node::Simple(node));
             } else {
-                let left_port = ports[2*i - 1];
-                let right_port = ports[2*i];
+                let left_port = ports[2 * i - 1];
+                let right_port = ports[2 * i];
                 let node = ForwardingNode::new(i as u8, [left_port, right_port], mac);
                 self.nodes.insert(i as u8, Node::Forwarding(node));
             }
@@ -70,7 +70,9 @@ impl ChainTopology {
                     continue;
                 }
 
-                let node = self.nodes.get_mut(&(node_idx as u8))
+                let node = self
+                    .nodes
+                    .get_mut(&(node_idx as u8))
                     .unwrap_or_else(|| unreachable!("Node {node_idx} missing"));
 
                 let fwd = match node {
@@ -106,8 +108,9 @@ impl ChainTopology {
 
 impl Topology for ChainTopology {
     fn handle_pkt(&mut self, event: Event) -> Option<Event> {
-        match event {
-            Event::SendPkt { time, from, frame } => {
+        let time = event.time;
+        match event.action {
+            NodeAction::Send { from, frame } => {
                 let (id, port) = from;
                 log_frame!("SEND", time, frame, port);
                 let link = self.links.get_mut(&from)
@@ -116,32 +119,20 @@ impl Topology for ChainTopology {
                 let peer = link.get_peer(from);
                 let (pkt_opt, del_time) = link.handle_pkt(frame.clone(), time);
                 let pkt = pkt_opt?;
-
-                Some(Event::RcvPkt {
-                    time: del_time,
-                    at: peer,
-                    frame: pkt,
-                })
+                Some(Event::new(del_time,
+                    NodeAction::Rcv {
+                        to: peer,
+                        frame: pkt,
+                    },
+                ))
             }
-            Event::RcvPkt { time, at, frame } => {
-                let (id, port) = at;
+            NodeAction::Rcv { to, frame } => {
+                let (id, port) = to;
                 log_frame!("RECV", time, frame, port);
-
                 let node = self.nodes.get(&id)
                     .unwrap_or_else(|| unreachable!("Can't find node {id} in chain"));
-
-                match node.rcv_pkt(&frame, port)? {
-                    NodeAction::Send { from, frame } => {
-                        Some(Event::SendPkt { 
-                            time,
-                            from,
-                            frame,
-                        })
-                    },
-                    _ => unreachable!(
-                        "Can't get receive node action since we would return None instead"
-                    ),
-                }
+                let action = node.rcv_pkt(&frame, port)?;
+                Some(Event::new(time, action))
             }
         }
     }

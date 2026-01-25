@@ -1,32 +1,20 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    link::{LinkEndId, PortId},
+    link::PortId,
     nodes::{NodeAction, NodeHandler},
-    packet::{EthernetFrame, MacAddress},
+    packet::MacAddress,
     simulator::SimTime,
 };
 
-#[derive(Debug)]
-pub enum Event {
-    SendPkt {
-        time: SimTime,
-        from: LinkEndId,
-        frame: EthernetFrame,
-    },
-    RcvPkt {
-        time: SimTime,
-        at: LinkEndId,
-        frame: EthernetFrame,
-    },
+pub struct Event {
+    pub time: SimTime,
+    pub action: NodeAction,
 }
 
 impl Event {
-    pub fn time(&self) -> SimTime {
-        match self {
-            Event::SendPkt { time, .. } => *time,
-            Event::RcvPkt { time, .. } => *time,
-        }
+    pub fn new(time: SimTime, action: NodeAction) -> Self {
+        Self { time, action }
     }
 }
 
@@ -44,9 +32,8 @@ impl EventHandler {
     }
 
     pub fn schedule(&mut self, event: Event) {
-        let time = event.time();
         self.event_queue
-            .entry(time)
+            .entry(event.time)
             .or_insert_with(Vec::new)
             .push(event);
     }
@@ -59,22 +46,13 @@ impl EventHandler {
         dst: &MacAddress,
     ) {
         if let Some(action) = n.send_pkt(dst, port) {
-            if let NodeAction::Send { from, frame } = action {
-                self.schedule(Event::SendPkt {
-                    time,
-                    from,
-                    frame,
-                });
-            }
+            self.schedule(Event::new(time, action));
         }
     }
 
     pub fn next_events(&mut self) -> Option<Vec<Event>> {
-        if let Some((&time, _)) = self.event_queue.iter().next() {
-            self.time = time;
-            self.event_queue.remove(&time)
-        } else {
-            None
-        }
+        let (&time, _) = self.event_queue.iter().next()?;
+        self.time = time;
+        self.event_queue.remove(&time)
     }
 }

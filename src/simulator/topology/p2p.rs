@@ -1,7 +1,7 @@
 use crate::{
     link::{Link, LinkConfig, PortId},
     log_frame,
-    nodes::{NodeHandler, NodeId, simple::SimpleNode},
+    nodes::{NodeAction, NodeHandler, NodeId, simple::SimpleNode},
     simulator::{event::Event, topology::Topology},
 };
 
@@ -39,16 +39,6 @@ impl P2PConnection {
         }
     }
 
-    fn get_peer_from_id(&self, id: NodeId, port: PortId) -> SimpleNode {
-        let id_match = self.node_a.id == id;
-        let port_match = self.node_a.port == port;
-        match (id_match, port_match) {
-            (true, true) => self.node_b.clone(),
-            (false, false) => self.node_a.clone(),
-            (_, _) => unreachable!("ID and Port don't match with a single node"),
-        }
-    }
-
     fn get_node_from_id(&self, id: NodeId, port: PortId) -> SimpleNode {
         let id_match = self.node_a.id == id;
         let port_match = self.node_a.port == port;
@@ -72,33 +62,19 @@ impl P2PConnection {
 
 impl Topology for P2PConnection {
     fn handle_pkt(&mut self, event: Event) -> Option<Event> {
-        match event {
-            Event::SendPkt {
-                time,
-                from,
-                frame,
-            } => {
+        let time = event.time;
+        match event.action {
+            NodeAction::Send { from, frame } => {
                 let (id, port) = from;
                 log_frame!("SEND", time, frame, port);
-                let peer = self.get_peer_from_id(id, port);
-                let at = (peer.id, peer.port); 
                 let mut link = self.get_link_from_id(id, port);
-                if let (Some(pkt), del_time) = link.handle_pkt(frame.clone(), time) {
-                    Some(Event::RcvPkt {
-                        time: del_time,
-                        at,
-                        frame: pkt,
-                    })
-                } else {
-                    None
-                }
-            }
-            Event::RcvPkt {
-                time,
-                at,
-                frame,
-            } => {
-                let (id, port) = at;
+                let peer = link.get_peer(from);
+                let (pkt_opt, del_time) = link.handle_pkt(frame.clone(), time);
+                let pkt = pkt_opt?;
+                Some(Event::new(del_time, NodeAction::Rcv { to: peer, frame: pkt }))
+            },
+            NodeAction::Rcv { to, frame } => {
+                let (id, port) = to;
                 log_frame!("RECV", time, frame, port);
                 let node = self.get_node_from_id(id, port);
                 node.rcv_pkt(&frame, port);
