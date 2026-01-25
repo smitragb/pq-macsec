@@ -86,7 +86,7 @@ impl NodeHandler for ForwardingNode {
         if self.mac == dst_mac {
             info!(
                 node = %self.id,
-                "Successfully received pkt at node"
+                "Successfully received pkt at"
             );
             return None;
         }

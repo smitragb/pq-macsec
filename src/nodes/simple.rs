@@ -36,7 +36,7 @@ impl NodeHandler for SimpleNode {
     fn rcv_pkt(&self, _frame: &EthernetFrame, _port: PortId) -> Option<NodeAction> {
         info!(
             node = %self.id,
-            "Successfully received pkt at node"
+            "Successfully received pkt at"
         );
         None
     }

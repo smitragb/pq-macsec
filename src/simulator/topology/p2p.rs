@@ -29,7 +29,7 @@ impl P2PConnection {
         }
     }
 
-    pub fn full_specification(node_a: &SimpleNode, node_b: &SimpleNode, link: &Link) -> Self {
+    pub fn with_link(node_a: &SimpleNode, node_b: &SimpleNode, link: &Link) -> Self {
         let rev_link = link.swap_ends();
         Self {
             node_a: node_a.clone(),
