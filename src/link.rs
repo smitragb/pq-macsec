@@ -78,6 +78,10 @@ impl Link {
         }
     }
 
+    pub fn get_ends(&self) -> (LinkEndId, LinkEndId) {
+        (self.config.end_a, self.config.end_b)
+    }
+
     pub fn handle_pkt (
         &mut self,
         pkt: EthernetFrame,

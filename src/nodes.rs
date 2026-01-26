@@ -1,10 +1,11 @@
 use crate::{
     link::{LinkEndId, PortId},
-    nodes::{bridging::ForwardingNode, simple::SimpleNode},
+    nodes::{bridging::ForwardingNode, simple::SimpleNode, switch::SwitchingNode},
     packet::{EthernetFrame, MacAddress},
 };
 pub mod bridging;
 pub mod simple;
+pub mod switch;
 
 pub type NodeId = u8;
 pub trait NodeHandler {
@@ -26,6 +27,7 @@ pub enum NodeAction {
 pub enum Node {
     Simple(SimpleNode),
     Forwarding(ForwardingNode),
+    Switch(SwitchingNode),
 }
 
 impl NodeHandler for Node {
@@ -33,6 +35,7 @@ impl NodeHandler for Node {
         match self {
             Node::Simple(s) => s.send_pkt(dst_mac, out_port),
             Node::Forwarding(f) => f.send_pkt(dst_mac, out_port),
+            Node::Switch(sw) => sw.send_pkt(dst_mac, out_port),
         }
     }
 
@@ -40,7 +43,27 @@ impl NodeHandler for Node {
         match self {
             Node::Simple(s) => s.rcv_pkt(frame, port),
             Node::Forwarding(f) => f.rcv_pkt(frame, port),
+            Node::Switch(sw) => sw.rcv_pkt(frame, port),
         }
+    }
+}
+
+impl Node {
+    pub fn id(&self) -> NodeId {
+        match self {
+            Node::Simple(s) => s.id, 
+            Node::Forwarding(f) => f.id,
+            Node::Switch(sw) => sw.id,
+        }
+    }
+
+    pub fn mac(&self) -> MacAddress {
+        match self {
+            Node::Simple(s) => s.mac,
+            Node::Forwarding(f) => f.mac,
+            Node::Switch(sw) => sw.mac,
+        }
+
     }
 }
 

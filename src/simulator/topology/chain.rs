@@ -77,7 +77,7 @@ impl ChainTopology {
 
                 let fwd = match node {
                     Node::Forwarding(f) => f,
-                    Node::Simple(_) => unreachable!("Cannot have SimpleNode here"),
+                    _ => unreachable!("Cannot have SimpleNode here"),
                 };
 
                 let port = if mac_idx < node_idx {
