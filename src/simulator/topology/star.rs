@@ -1,7 +1,12 @@
 use std::collections::HashMap;
 
 use crate::{
-    assert_or_log, link::{Link, LinkConfig, LinkEndId, PortId}, log_frame, nodes::{Node, NodeAction, NodeHandler, NodeId, simple::SimpleNode, switch::SwitchingNode}, packet::MacAddress, simulator::{event::Event, topology::Topology}
+    assert_or_log,
+    link::{Link, LinkConfig, LinkEndId, PortId},
+    log_frame,
+    nodes::{Node, NodeAction, NodeHandler, NodeId, simple::SimpleNode, switch::SwitchingNode},
+    packet::MacAddress,
+    simulator::{event::Event, topology::Topology},
 };
 
 pub struct StarTopology {
@@ -106,7 +111,10 @@ impl StarTopology {
             .zip(self.switch_ports.iter().copied())
             .collect();
 
-        let switch = self.nodes.get_mut(&self.switch_id).expect("Create SwitchingNode first");
+        let switch = self
+            .nodes
+            .get_mut(&self.switch_id)
+            .expect("Create SwitchingNode first");
         let Node::Switch(s) = switch else {
             unreachable!("Need the node at switch_id to be a SwitchingNode");
         };
@@ -114,6 +122,10 @@ impl StarTopology {
             s.install_mac_entry(&mac, port);
         }
     }
+
+    pub fn get_node(&self, id: NodeId) -> Option<&Node> {
+        self.nodes.get(&id) 
+    } 
 }
 
 impl Topology for StarTopology {
@@ -123,27 +135,32 @@ impl Topology for StarTopology {
             NodeAction::Send { from, frame } => {
                 let (id, port) = from;
                 log_frame!("SEND", time, frame, port);
-                let link = self.links.get_mut(&from)
+                let link = self
+                    .links
+                    .get_mut(&from)
                     .unwrap_or_else(|| unreachable!("Can't send out of node {id}"));
 
                 let peer = link.get_peer(from);
                 let (pkt_opt, del_time) = link.handle_pkt(frame.clone(), time);
                 let pkt = pkt_opt?;
-                Some(Event::new(del_time,
+                Some(Event::new(
+                    del_time,
                     NodeAction::Rcv {
                         to: peer,
                         frame: pkt,
                     },
                 ))
-            },
+            }
             NodeAction::Rcv { to, frame } => {
                 let (id, port) = to;
                 log_frame!("RECV", time, frame, port);
-                let node = self.nodes.get(&id)
+                let node = self
+                    .nodes
+                    .get(&id)
                     .unwrap_or_else(|| unreachable!("Can't find node {id} in chain"));
                 let action = node.rcv_pkt(&frame, port)?;
                 Some(Event::new(time, action))
-            },
+            }
         }
     }
 }
