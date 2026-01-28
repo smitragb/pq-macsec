@@ -14,8 +14,8 @@ pub struct SimpleNode {
 }
 
 impl SimpleNode {
-    pub fn new(id: NodeId, mac: MacAddress, port: PortId) -> Self {
-        Self { id, mac, port }
+    pub fn new(id: NodeId, mac: &MacAddress, port: PortId) -> Self {
+        Self { id, mac: *mac, port }
     }
 
     pub fn get_link_id(&self) -> LinkEndId {

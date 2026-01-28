@@ -92,7 +92,7 @@ fn run(args: &Args) {
         .add_nodes(&node_macs)
         .add_links();
     let mut sim = Simulator::new(star);
-    let n = SimpleNode::new(1, node_macs[0], 0);
+    let n = SimpleNode::new(1, &node_macs[0], 0);
     for i in 2..nodes {
         let idx = (i - 1) as usize;
         sim.schedule_send(idx as u64, &n, n.port, &node_macs[idx]);

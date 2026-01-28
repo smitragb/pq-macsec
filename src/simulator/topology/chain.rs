@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     assert_or_log,
-    link::{Link, LinkConfig, LinkEndId, PortId},
+    link::{Link, LinkEndId, PortId, config::LinkConfig},
     log_frame,
     nodes::{Node, NodeAction, NodeHandler, NodeId, bridging::ForwardingNode, simple::SimpleNode},
     packet::MacAddress,
@@ -48,15 +48,15 @@ impl ChainTopology {
         let last = (self.num_nodes - 1) as usize;
         for (i, mac) in macs.iter().enumerate() {
             if i == 0 {
-                let node = SimpleNode::new(i as u8, *mac, ports[0]);
+                let node = SimpleNode::new(i as u8, mac, ports[0]);
                 self.nodes.insert(i as u8, Node::Simple(node));
             } else if i == last {
-                let node = SimpleNode::new(i as u8, *mac, ports[2 * last - 1]);
+                let node = SimpleNode::new(i as u8, mac, ports[2 * last - 1]);
                 self.nodes.insert(i as u8, Node::Simple(node));
             } else {
                 let left_port = ports[2 * i - 1];
                 let right_port = ports[2 * i];
-                let node = ForwardingNode::new(i as u8, [left_port, right_port], mac);
+                let node = ForwardingNode::new(i as u8, &[left_port, right_port], mac);
                 self.nodes.insert(i as u8, Node::Forwarding(node));
             }
         }
@@ -113,13 +113,16 @@ impl Topology for ChainTopology {
             NodeAction::Send { from, frame } => {
                 let (id, port) = from;
                 log_frame!("SEND", time, frame, port);
-                let link = self.links.get_mut(&from)
+                let link = self
+                    .links
+                    .get_mut(&from)
                     .unwrap_or_else(|| unreachable!("Can't send out of node {id}"));
 
                 let peer = link.get_peer(from);
                 let (pkt_opt, del_time) = link.handle_pkt(frame.clone(), time);
                 let pkt = pkt_opt?;
-                Some(Event::new(del_time,
+                Some(Event::new(
+                    del_time,
                     NodeAction::Rcv {
                         to: peer,
                         frame: pkt,
@@ -129,7 +132,9 @@ impl Topology for ChainTopology {
             NodeAction::Rcv { to, frame } => {
                 let (id, port) = to;
                 log_frame!("RECV", time, frame, port);
-                let node = self.nodes.get(&id)
+                let node = self
+                    .nodes
+                    .get(&id)
                     .unwrap_or_else(|| unreachable!("Can't find node {id} in chain"));
                 let action = node.rcv_pkt(&frame, port)?;
                 Some(Event::new(time, action))

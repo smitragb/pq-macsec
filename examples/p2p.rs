@@ -1,7 +1,7 @@
 use clap::Parser;
 use pq_macsec::{
     init_logging,
-    link::{Link, LinkConfig},
+    link::{Link, config::LinkConfig},
     nodes::simple::SimpleNode, simulator::{Simulator, topology::p2p::P2PConnection},
 };
 
@@ -23,12 +23,12 @@ struct Args {
 fn run(args: &Args) {
     let n0 = {
         let mac = [0x00, 0x1a, 0x2b, 0x3c, 0x4d, 0x5e];
-        SimpleNode::new(0, mac, 10)
+        SimpleNode::new(0, &mac, 10)
     };
 
     let n1 = {
         let mac = [0x01, 0x1b, 0x2c, 0x3d, 0x4e, 0x5f];
-        SimpleNode::new(1, mac, 20)
+        SimpleNode::new(1, &mac, 20)
     };
 
     let link = {

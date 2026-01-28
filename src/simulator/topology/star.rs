@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     assert_or_log,
-    link::{Link, LinkConfig, LinkEndId, PortId},
+    link::{Link, config::LinkConfig, LinkEndId, PortId},
     log_frame,
     nodes::{Node, NodeAction, NodeHandler, NodeId, simple::SimpleNode, switch::SwitchingNode},
     packet::MacAddress,
@@ -86,7 +86,7 @@ impl StarTopology {
         );
         for (i, &mac) in macs.iter().enumerate() {
             let id = (i + 1) as u8;
-            let n = SimpleNode::new(id, mac, 0);
+            let n = SimpleNode::new(id, &mac, 0);
             self.nodes.insert(id, Node::Simple(n));
         }
         self.update_switch(macs);

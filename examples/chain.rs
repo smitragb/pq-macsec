@@ -77,7 +77,7 @@ fn run(args: &Args) {
         let ports: Vec<PortId> = (0..(2 * nodes - 2)).collect();
         ChainTopology::new(nodes).build(&macs, &ports)
     };
-    let start_node = SimpleNode::new(0, start_mac, 0);
+    let start_node = SimpleNode::new(0, &start_mac, 0);
     let mut sim = Simulator::new(chain);
     for id in 1..nodes {
         let dst_mac = macs[id as usize];

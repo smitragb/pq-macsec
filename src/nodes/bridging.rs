@@ -18,11 +18,11 @@ pub struct ForwardingNode {
 }
 
 impl ForwardingNode {
-    pub fn new(id: NodeId, ports: [PortId; 2], mac: &MacAddress) -> Self {
+    pub fn new(id: NodeId, ports: &[PortId; 2], mac: &MacAddress) -> Self {
         Self {
             id,
-            ports,
-            mac: mac.clone(),
+            ports: *ports,
+            mac: *mac,
             mac_address_table: HashMap::new(),
         }
     }

@@ -1,0 +1,16 @@
+[[nodes]]
+kind = "simple"
+id = 1
+port = 10
+mac = [0x00, 0x01, 0x00, 0x02, 0x00, 0x03]
+
+[[nodes]]
+kind = "simple"
+id = 2
+port = 20
+mac = [0x00, 0x01, 0x00, 0x02, 0x00, 0x0f]
+
+[[links]]
+end_a = [1, 10]
+end_b = [2, 20]
+delay = 3

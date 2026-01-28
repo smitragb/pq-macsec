@@ -1,5 +1,5 @@
 use crate::{
-    link::{Link, LinkConfig, PortId},
+    link::{Link, PortId, config::LinkConfig},
     log_frame,
     nodes::{NodeAction, NodeHandler, NodeId, simple::SimpleNode},
     simulator::{event::Event, topology::Topology},
@@ -71,8 +71,14 @@ impl Topology for P2PConnection {
                 let peer = link.get_peer(from);
                 let (pkt_opt, del_time) = link.handle_pkt(frame.clone(), time);
                 let pkt = pkt_opt?;
-                Some(Event::new(del_time, NodeAction::Rcv { to: peer, frame: pkt }))
-            },
+                Some(Event::new(
+                    del_time,
+                    NodeAction::Rcv {
+                        to: peer,
+                        frame: pkt,
+                    },
+                ))
+            }
             NodeAction::Rcv { to, frame } => {
                 let (id, port) = to;
                 log_frame!("RECV", time, frame, port);
